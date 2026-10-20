@@ -19,6 +19,7 @@ import {
   Sprout,
   Star,
   Swords,
+  ShieldCheck,
   Target,
   Trophy,
   X,
@@ -28,6 +29,10 @@ import type { Question, SubjectId } from "./data/questions";
 import Quiz from "./components/Quiz";
 import Duel from "./components/Duel";
 import YearRoute from "./components/YearRoute";
+import ParentDashboard from "./components/ParentDashboard";
+import FamilyConnect from "./components/FamilyConnect";
+import { useFamilySync } from "./family-client";
+import type { ChildSnapshot, DeviceLearningEvent } from "./family-contract";
 import {
   completeYearQuest,
   getAnnualAchievements,
@@ -44,7 +49,7 @@ import {
   todayKey,
 } from "./progress";
 
-type View = "home" | "year" | "duel" | "achievements";
+type View = "home" | "year" | "duel" | "achievements" | "parent";
 const icons = {
   math: FlaskConical,
   world: Leaf,
@@ -69,7 +74,9 @@ const worldDescriptions: Record<SubjectId, string> = {
 
 export default function App() {
   const [progress, setProgress] = useState(loadProgress);
-  const [view, setView] = useState<View>("home");
+  const [view, setView] = useState<View>(() =>
+    window.location.pathname === "/parent" ? "parent" : "home",
+  );
   const [quiz, setQuiz] = useState<SubjectId | "mixed" | null>(null);
   const [quizWeek, setQuizWeek] = useState<number | undefined>();
   const [yearStore, setYearStore] = useState(loadYearStore);
@@ -79,6 +86,27 @@ export default function App() {
   );
   const [profileError, setProfileError] = useState("");
   const [storageUnavailable, setStorageUnavailable] = useState(false);
+  const activityOpen = useRef(false);
+  activityOpen.current = quiz !== null || view === "duel";
+  const family = useFamilySync({
+    snapshots: progress.profiles.map((item, index) => ({
+      childId: String(index) as "0" | "1",
+      profile: item,
+      year: yearStore.profiles[index],
+    })),
+    onSnapshots: (children: ChildSnapshot[]) => {
+      // Local play stays responsive; the next idle sync reconciles server snapshots.
+      if (activityOpen.current) return;
+      const ordered = [...children].sort((a, b) =>
+        a.childId.localeCompare(b.childId),
+      );
+      setProgress((previous) => ({
+        ...previous,
+        profiles: ordered.map((child) => child.profile),
+      }));
+      setYearStore({ profiles: [ordered[0].year, ordered[1].year] });
+    },
+  });
   const profileDialog = useRef<HTMLElement>(null);
   const profile = progress.profiles[progress.active];
   const yearState = yearStore.profiles[progress.active];
@@ -137,7 +165,20 @@ export default function App() {
     setQuiz(null);
     setQuizWeek(undefined);
     setView(next);
+    window.history.pushState(null, "", next === "parent" ? "/parent" : "/");
     window.scrollTo({ top: 0, behavior: "instant" });
+  }
+  useEffect(() => {
+    const back = () => {
+      setQuiz(null);
+      setQuizWeek(undefined);
+      setView(window.location.pathname === "/parent" ? "parent" : "home");
+    };
+    window.addEventListener("popstate", back);
+    return () => window.removeEventListener("popstate", back);
+  }, []);
+  function track(event: DeviceLearningEvent) {
+    family.record({ ...event, childId: String(progress.active) as "0" | "1" });
   }
   function launch(subject: SubjectId | "mixed") {
     setQuizWeek(undefined);
@@ -185,6 +226,10 @@ export default function App() {
       }));
   }
   function saveNames() {
+    if (family.connected) {
+      setProfileOpen(false);
+      return;
+    }
     if (editNames.some((n) => !n.trim())) {
       setProfileError("У каждого исследователя должно быть игровое имя.");
       return;
@@ -258,7 +303,7 @@ export default function App() {
               setProfileError("");
               setProfileOpen(true);
             }}
-            disabled={quiz !== null}
+            disabled={quiz !== null || view === "duel"}
           >
             <span className={`avatar avatar-${progress.active}`}>
               {progress.active === 0 ? "🦊" : "🐻"}
@@ -286,6 +331,12 @@ export default function App() {
           onClose={() => setQuiz(null)}
           onAnswer={updateAnswer}
           onFinish={finish}
+          onTrack={track}
+        />
+      ) : view === "parent" ? (
+        <ParentDashboard
+          onHome={() => navigate("home")}
+          onConnectDevice={family.pair}
         />
       ) : view === "year" ? (
         <YearRoute
@@ -296,9 +347,12 @@ export default function App() {
         />
       ) : view === "duel" ? (
         <Duel
+          key={progress.active}
+          childId={progress.active}
           name={profile.name}
           level={level}
           onHome={() => navigate("home")}
+          onTrack={track}
         />
       ) : view === "achievements" ? (
         <main className="page-shell achievements-page">
@@ -654,11 +708,17 @@ export default function App() {
             <Compass size={18} /> квестоград{" "}
             <span className="footer-dot">·</span> Учиться приключаясь
           </span>
-          <span>С заботой о любопытстве. Для 4 класса.</span>
+          <button
+            className="text-button parent-footer-link"
+            onClick={() => navigate("parent")}
+          >
+            <ShieldCheck size={16} /> Кабинет родителя
+          </button>
         </div>
         <p>
           Авторские задания для дополнительной практики. Английский — базовые
-          темы 4 класса. Без рекламы и регистрации.
+          темы 4 класса. Без рекламы. Семейный прогресс — с доступом для
+          родителя.
         </p>
       </footer>
       {profileOpen && (
@@ -687,7 +747,9 @@ export default function App() {
             <p>
               У каждого — своё имя и свои открытия.
               <br />
-              Прогресс сохраняется в этом браузере.
+              {family.connected
+                ? "Прогресс связан с семейным кабинетом."
+                : "Прогресс сохраняется в этом браузере."}
             </p>
             {progress.profiles.map((p, i) => (
               <div
@@ -715,7 +777,8 @@ export default function App() {
                     autoFocus={i === 0}
                     aria-label={`Имя игрока ${i + 1}`}
                     maxLength={20}
-                    value={editNames[i]}
+                    value={family.connected ? p.name : editNames[i]}
+                    disabled={family.connected}
                     onChange={(e) =>
                       setEditNames((names) =>
                         names.map((n, j) => (j === i ? e.target.value : n)),
@@ -737,8 +800,17 @@ export default function App() {
               Вперёд, к открытиям <ArrowRight size={17} />
             </button>
             <small className="profile-privacy">
-              Лучше использовать игровые имена. Личные данные не нужны.
+              {family.connected
+                ? "Игровые имена меняются в кабинете родителя."
+                : "Лучше использовать игровые имена. Личные данные не нужны."}
             </small>
+            <FamilyConnect
+              client={family}
+              onParent={() => {
+                setProfileOpen(false);
+                navigate("parent");
+              }}
+            />
           </section>
         </div>
       )}

@@ -211,6 +211,46 @@ for (const room of final) {
 console.log(
   `PASS: production duel finished 8 rounds; concurrent answers, idempotency, authorization, two-player cap and winners verified. Scores ${expectedScores.join(":")}.`,
 );
+const familyStatus = await request("parent", { action: "status" });
+assert.deepEqual(Object.keys(familyStatus).sort(), [
+  "activationAvailable",
+  "authenticated",
+  "setupRequired",
+]);
+assert.equal(familyStatus.authenticated, false);
+assert.equal(typeof familyStatus.setupRequired, "boolean");
+if (familyStatus.setupRequired)
+  assert.equal(familyStatus.activationAvailable, true);
+await request("parent", { action: "dashboard" }, 401);
+await request("parent", { action: "history", childId: "0" }, 401);
+await request(
+  "parent",
+  { action: "sync", deviceToken: "invalid", events: [] },
+  401,
+);
+// These invalid codes exercise durable create + ETag update of the limiter
+// without claiming the account or consuming the owner's activation link.
+await request("parent", { action: "pair", code: "00000000" }, 400);
+await request("parent", { action: "pair", code: "00000000" }, 400);
+for (const [method, extraHeaders, expected] of [
+  ["GET", {}, 405],
+  ["POST", { Origin: "https://example.invalid" }, 403],
+]) {
+  const response = await fetch(`${origin}/.netlify/functions/parent`, {
+    method,
+    headers: { "Content-Type": "application/json", ...extraHeaders },
+    ...(method === "POST"
+      ? { body: JSON.stringify({ action: "dashboard" }) }
+      : {}),
+    signal: AbortSignal.timeout(30_000),
+  });
+  requests++;
+  assert.equal(response.status, expected);
+  assert.match(response.headers.get("cache-control"), /no-store/);
+}
+console.log(
+  "PASS: parent API protects family data, blocks foreign origins, persists versioned rate limits and leaves personal activation unused.",
+);
 console.log(
   `PASS: ${requests} production API requests completed. No credentials printed.`,
 );

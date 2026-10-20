@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { subjects } from "../data/questions";
 import type { SubjectId } from "../data/questions";
+import type { DeviceLearningEvent } from "../family-contract";
 import type {
   DuelFeedback,
   DuelRequest,
@@ -23,12 +24,15 @@ import type {
   DuelRoom,
 } from "../../server/contract";
 
-type Session = { code: string; token: string };
+type Session = { code: string; token: string; childId?: number };
 const sessionKey = "questograd-duel-session";
-function loadSession(): Session | null {
+function loadSession(childId: number): Session | null {
   try {
     const s = JSON.parse(sessionStorage.getItem(sessionKey) || "null");
-    return s && typeof s.code === "string" && typeof s.token === "string"
+    return s &&
+      typeof s.code === "string" &&
+      typeof s.token === "string" &&
+      (s.childId === undefined || s.childId === childId)
       ? s
       : null;
   } catch {
@@ -56,12 +60,18 @@ export default function Duel({
   name,
   level,
   onHome,
+  onTrack,
+  childId,
 }: {
   name: string;
   level: number;
   onHome: () => void;
+  onTrack?: (event: DeviceLearningEvent) => void;
+  childId: number;
 }) {
-  const [session, setSession] = useState<Session | null>(loadSession);
+  const [session, setSession] = useState<Session | null>(() =>
+    loadSession(childId),
+  );
   const [room, setRoom] = useState<DuelRoom | null>(null);
   const [code, setCode] = useState("");
   const [playerName, setPlayerName] = useState(name);
@@ -72,6 +82,56 @@ export default function Duel({
   const [chosen, setChosen] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const mounted = useRef(true);
+  const tracking = useRef(onTrack);
+  tracking.current = onTrack;
+  const reported = useRef(new Set<string>());
+  const clock = useRef({ total: 0, elapsed: 0, since: 0 });
+  useEffect(() => {
+    const timer = clock.current;
+    timer.elapsed = 0;
+    timer.since =
+      room?.currentQuestion &&
+      !feedback &&
+      document.visibilityState === "visible"
+        ? performance.now()
+        : 0;
+    const visibility = () => {
+      if (timer.since) timer.elapsed += performance.now() - timer.since;
+      timer.since =
+        room?.currentQuestion &&
+        !feedback &&
+        document.visibilityState === "visible"
+          ? performance.now()
+          : 0;
+    };
+    document.addEventListener("visibilitychange", visibility);
+    return () => document.removeEventListener("visibilitychange", visibility);
+  }, [room?.currentQuestion?.id, feedback]);
+  useEffect(() => {
+    if (!room || room.state !== "finished") return;
+    const id = `duel-${room.code}-${room.selfId}`;
+    if (reported.current.has(id)) return;
+    const player = room.players.find((p) => p.id === room.selfId);
+    if (!player) return;
+    reported.current.add(id);
+    tracking.current?.({
+      type: "duel",
+      id,
+      quizId: id,
+      at: new Date().toISOString(),
+      subject: room.subject,
+      roomCode: room.code,
+      score: player.score,
+      total: room.total,
+      outcome:
+        room.winnerIds.length > 1
+          ? "tie"
+          : room.winnerIds.includes(room.selfId)
+            ? "win"
+            : "loss",
+      durationMs: clock.current.total,
+    });
+  }, [room]);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -135,8 +195,9 @@ export default function Duel({
             },
       );
       if (mounted.current && result.token) {
+        clock.current = { total: 0, elapsed: 0, since: 0 };
         setRoom(result.room);
-        setSession({ code: result.room.code, token: result.token });
+        setSession({ code: result.room.code, token: result.token, childId });
       }
     } catch (e) {
       if (mounted.current)
@@ -160,6 +221,18 @@ export default function Duel({
         answerIndex,
       });
       if (mounted.current) {
+        const timer = clock.current;
+        timer.total += Math.min(
+          300_000,
+          Math.max(
+            0,
+            Math.round(
+              timer.elapsed +
+                (timer.since ? performance.now() - timer.since : 0),
+            ),
+          ),
+        );
+        timer.since = 0;
         setRoom((current) =>
           current &&
           current.code === data.room.code &&

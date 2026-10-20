@@ -7,6 +7,8 @@ import {
 } from "./content-store.ts";
 import { createQuestionProvider } from "./quest-service.ts";
 import { createReadingBankLoader } from "./reading-store.ts";
+import { createMemoryFamilyStore } from "./family-store.ts";
+import { createParentHandler } from "./parent-service.ts";
 
 /** Development only: restart clears rooms and the local content store. Production uses Netlify Blobs. */
 export function localDuelMiddleware() {
@@ -17,6 +19,7 @@ export function localDuelMiddleware() {
     createQuestionProvider(loadBank, loadReading),
   );
   const quest = createQuestHandler(loadBank, loadReading);
+  const parent = createParentHandler(createMemoryFamilyStore());
   return async (
     req: IncomingMessage,
     res: ServerResponse,
@@ -28,13 +31,18 @@ export function localDuelMiddleware() {
         ? duel
         : path === "/.netlify/functions/quest"
           ? quest
-          : null;
+          : path === "/.netlify/functions/parent"
+            ? parent
+            : null;
     if (!handler) return next();
     try {
       let body = "";
       for await (const chunk of req) {
         body += chunk.toString();
-        if (body.length > 4096) {
+        if (
+          Buffer.byteLength(body) >
+          (path === "/.netlify/functions/parent" ? 262144 : 4096)
+        ) {
           res.writeHead(413, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Слишком большой запрос." }));
           return;
@@ -43,11 +51,14 @@ export function localDuelMiddleware() {
       const headers = new Headers();
       for (const [name, value] of Object.entries(req.headers))
         if (typeof value === "string") headers.set(name, value);
-      const request = new Request(`http://localhost${path}`, {
-        method: req.method,
-        headers,
-        ...(req.method !== "GET" && req.method !== "HEAD" ? { body } : {}),
-      });
+      const request = new Request(
+        `http://${req.headers.host || "localhost"}${path}`,
+        {
+          method: req.method,
+          headers,
+          ...(req.method !== "GET" && req.method !== "HEAD" ? { body } : {}),
+        },
+      );
       const response = await handler(request);
       res.writeHead(response.status, Object.fromEntries(response.headers));
       res.end(await response.text());

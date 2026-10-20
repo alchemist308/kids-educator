@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { subjects } from "../data/questions";
 import type { Question, SubjectId } from "../data/questions";
+import type { DeviceLearningEvent } from "../family-contract";
 
 export default function Quiz({
   subject,
@@ -20,6 +21,7 @@ export default function Quiz({
   onClose,
   onAnswer,
   onFinish,
+  onTrack,
 }: {
   subject: SubjectId | "mixed";
   level: number;
@@ -34,6 +36,7 @@ export default function Quiz({
     correct: number,
     total: number,
   ) => void;
+  onTrack?: (event: DeviceLearningEvent) => void;
 }) {
   const [items, setItems] = useState<Question[]>([]);
   const [initialLevel] = useState(level);
@@ -48,6 +51,33 @@ export default function Quiz({
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
+  const quizId = useRef(crypto.randomUUID());
+  const tracking = useRef(onTrack);
+  tracking.current = onTrack;
+  const timing = useRef({ elapsed: 0, since: 0, total: 0 });
+  useEffect(() => {
+    timing.current.elapsed = 0;
+    timing.current.since =
+      !loading &&
+      !done &&
+      selected === null &&
+      document.visibilityState === "visible"
+        ? performance.now()
+        : 0;
+    const visibility = () => {
+      const clock = timing.current;
+      if (clock.since) clock.elapsed += performance.now() - clock.since;
+      clock.since =
+        !loading &&
+        !done &&
+        selected === null &&
+        document.visibilityState === "visible"
+          ? performance.now()
+          : 0;
+    };
+    document.addEventListener("visibilitychange", visibility);
+    return () => document.removeEventListener("visibilitychange", visibility);
+  }, [index, loading, done, selected]);
   const question = items[index];
   const title =
     subjects.find((s) => s.id === subject)?.title || "Большое приключение";
@@ -76,6 +106,14 @@ export default function Quiz({
         if (!controller.signal.aborted) {
           setItems(data.questions);
           setLoading(false);
+          tracking.current?.({
+            type: "start",
+            id: crypto.randomUUID(),
+            quizId: quizId.current,
+            at: new Date().toISOString(),
+            subject,
+            ...(week ? { week } : {}),
+          });
         }
       })
       .catch((e) => {
@@ -98,6 +136,29 @@ export default function Quiz({
     const correct = choice === question.answer;
     if (correct) setScore((s) => s + 1);
     const reward = onAnswer(question, correct);
+    const clock = timing.current;
+    const durationMs = Math.min(
+      300_000,
+      Math.max(
+        0,
+        Math.round(
+          clock.elapsed + (clock.since ? performance.now() - clock.since : 0),
+        ),
+      ),
+    );
+    clock.total += durationMs;
+    clock.since = 0;
+    tracking.current?.({
+      type: "answer",
+      id: crypto.randomUUID(),
+      quizId: quizId.current,
+      at: new Date().toISOString(),
+      subject,
+      ...(week ? { week } : {}),
+      question,
+      answerIndex: choice,
+      durationMs,
+    });
     setLastEarned(reward.earned);
     setXp((v) => v + reward.earned);
     setLevelUp(reward.levelUp);
@@ -106,12 +167,23 @@ export default function Quiz({
     if (index === items.length - 1) {
       setDone(true);
       onFinish(subject, score, items.length);
+      tracking.current?.({
+        type: "finish",
+        id: crypto.randomUUID(),
+        quizId: quizId.current,
+        at: new Date().toISOString(),
+        subject,
+        ...(week ? { week } : {}),
+        durationMs: timing.current.total,
+      });
     } else {
       setIndex((i) => i + 1);
       setSelected(null);
     }
   }
   function restart() {
+    quizId.current = crypto.randomUUID();
+    timing.current = { elapsed: 0, since: 0, total: 0 };
     setRequestId((i) => i + 1);
     setIndex(0);
     setScore(0);
