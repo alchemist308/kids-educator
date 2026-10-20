@@ -99,14 +99,15 @@ export async function deployToNetlify({
     );
   const state = await loadState(root);
   let siteId = env.NETLIFY_SITE_ID?.trim() || state.siteId;
+  let site;
   if (siteId) {
     if (typeof siteId !== "string" || !/^[A-Za-z0-9_-]+$/.test(siteId))
       throw new Error(
         "Некорректный NETLIFY_SITE_ID или siteId в .netlify/state.json.",
       );
-    await api(`/sites/${encodeURIComponent(siteId)}`);
+    site = await api(`/sites/${encodeURIComponent(siteId)}`);
   } else {
-    const site = await api("/sites", "POST", {
+    site = await api("/sites", "POST", {
       name: `kvestograd-${randomBytes(4).toString("hex")}`,
     });
     if (typeof site.id !== "string" || !/^[A-Za-z0-9_-]+$/.test(site.id))
@@ -118,21 +119,51 @@ export async function deployToNetlify({
     await saveState(root, { ...state, siteId });
     log(`Создан сайт Netlify: ${site.name || siteId}.`);
   }
-
+  // CLI configuration can fall back to offline resolution when optional
+  // extension discovery is unavailable. A verified name still resolves the
+  // selected site there; a UUID would incorrectly be searched as a name.
+  const siteName = site.name;
+  if (
+    typeof siteName !== "string" ||
+    siteName.length > 63 ||
+    !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i.test(siteName)
+  )
+    throw new Error(
+      "Netlify не вернул корректное имя выбранного сайта. Публикация не выполнялась.",
+    );
+  const options = {
+    cwd: root,
+    env: {
+      ...env,
+      CI: "true",
+      NETLIFY_AUTH_TOKEN: token,
+      NETLIFY_SITE_ID: siteId,
+      XDG_CONFIG_HOME: env.XDG_CONFIG_HOME || resolve(root, ".netlify/config"),
+      NETLIFY_TELEMETRY_DISABLED: "1",
+    },
+  };
+  // Build locally without optional network-dependent extension discovery.
+  // The next command uploads the verified output and source function entrypoints.
+  const buildExitCode = await execute(cli, ["build", "--offline"], options);
+  if (buildExitCode !== 0)
+    throw new Error(
+      `Сборка завершилась с кодом ${buildExitCode}. Публикация не выполнялась. Сайт сохранён для повторной попытки.`,
+    );
   const exitCode = await execute(
     cli,
-    ["deploy", "--prod", "--build", "--site", siteId, "--json"],
-    {
-      cwd: root,
-      env: {
-        ...env,
-        CI: "true",
-        NETLIFY_AUTH_TOKEN: token,
-        XDG_CONFIG_HOME:
-          env.XDG_CONFIG_HOME || resolve(root, ".netlify/config"),
-        NETLIFY_TELEMETRY_DISABLED: "1",
-      },
-    },
+    [
+      "deploy",
+      "--prod",
+      "--no-build",
+      "--site",
+      siteName,
+      "--dir",
+      "dist",
+      "--functions",
+      "netlify/functions",
+      "--json",
+    ],
+    options,
   );
   if (exitCode !== 0)
     throw new Error(

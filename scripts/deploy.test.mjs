@@ -51,7 +51,7 @@ test("new site is saved before build and is reused after a failed deployment", a
   const fetchApi = async (url, options) => {
     calls.push({ url, method: options.method });
     return ok(
-      url.endsWith("/sites") ? { id: "site-123", name: "kvestograd-test" } : {},
+      url.includes("/sites") ? { id: "site-123", name: "kvestograd-test" } : {},
     );
   };
   const base = {
@@ -60,6 +60,7 @@ test("new site is saved before build and is reused after a failed deployment", a
     fetchApi,
     log() {},
   };
+  const commands = [];
   await assert.rejects(
     deployToNetlify({
       ...base,
@@ -68,27 +69,72 @@ test("new site is saved before build and is reused after a failed deployment", a
           await readFile(join(root, ".netlify/state.json"), "utf8"),
         );
         assert.equal(state.siteId, "site-123");
-        assert.deepEqual(args, [
-          "deploy",
-          "--prod",
-          "--build",
-          "--site",
-          "site-123",
-          "--json",
-        ]);
-        return 1;
+        commands.push(args);
+        return args[0] === "build" ? 0 : 1;
       },
     }),
     /кодом 1/,
   );
-  await deployToNetlify({ ...base, execute: async () => 0 });
+  const buildArgs = ["build", "--offline"];
+  const deployArgs = [
+    "deploy",
+    "--prod",
+    "--no-build",
+    "--site",
+    "kvestograd-test",
+    "--dir",
+    "dist",
+    "--functions",
+    "netlify/functions",
+    "--json",
+  ];
+  assert.deepEqual(commands, [buildArgs, deployArgs]);
+  const result = await deployToNetlify({
+    ...base,
+    execute: async (_cli, args) => {
+      commands.push(args);
+      return 0;
+    },
+  });
+  assert.deepEqual(commands, [buildArgs, deployArgs, buildArgs, deployArgs]);
+  assert.equal(result.deployed, true);
   assert.equal(calls.filter((call) => call.method === "POST").length, 1);
   assert.ok(calls.some((call) => call.url.endsWith("/sites/site-123")));
+});
+
+test("a failed offline build stops before publication and preserves the selected site", async (t) => {
+  const root = await rootForTest(t);
+  const commands = [];
+  await assert.rejects(
+    deployToNetlify({
+      root,
+      env: { NETLIFY_AUTH_TOKEN: "test-token" },
+      fetchApi: async (url) =>
+        ok(
+          url.endsWith("/sites")
+            ? { id: "new-site", name: "kvestograd-build-test" }
+            : {},
+        ),
+      execute: async (_cli, args) => {
+        commands.push(args);
+        return 3;
+      },
+      log() {},
+    }),
+    /Сборка завершилась с кодом 3.*Публикация не выполнялась/,
+  );
+  assert.deepEqual(commands, [["build", "--offline"]]);
+  assert.equal(
+    JSON.parse(await readFile(join(root, ".netlify/state.json"), "utf8"))
+      .siteId,
+    "new-site",
+  );
 });
 
 test("an explicitly selected existing site is verified, and credentials stay out of CLI args", async (t) => {
   const root = await rootForTest(t);
   const paths = [];
+  const commands = [];
   await deployToNetlify({
     root,
     env: {
@@ -97,11 +143,17 @@ test("an explicitly selected existing site is verified, and credentials stay out
     },
     fetchApi: async (url) => {
       paths.push(url);
-      return ok({});
+      return ok(
+        url.endsWith("/existing-site")
+          ? { id: "existing-site", name: "verified-existing-name" }
+          : {},
+      );
     },
     execute: async (_cli, args, options) => {
       assert.equal(args.includes("test-secret"), false);
       assert.equal(options.env.NETLIFY_AUTH_TOKEN, "test-secret");
+      assert.equal(options.env.NETLIFY_SITE_ID, "existing-site");
+      commands.push(args);
       return 0;
     },
     log() {},
@@ -110,6 +162,34 @@ test("an explicitly selected existing site is verified, and credentials stay out
     "https://api.netlify.com/api/v1/user",
     "https://api.netlify.com/api/v1/sites/existing-site",
   ]);
+  assert.deepEqual(commands[0], ["build", "--offline"]);
+  assert.equal(
+    commands[1][commands[1].indexOf("--site") + 1],
+    "verified-existing-name",
+  );
+  assert.equal(commands[1].includes("existing-site"), false);
+});
+
+test("a site without a verified valid name cannot start build or publication", async (t) => {
+  const root = await rootForTest(t);
+  await assert.rejects(
+    deployToNetlify({
+      root,
+      env: {
+        NETLIFY_AUTH_TOKEN: "test-token",
+        NETLIFY_SITE_ID: "existing-site",
+      },
+      fetchApi: async (url) =>
+        ok(
+          url.endsWith("/existing-site")
+            ? { id: "existing-site", name: "--auth injected" }
+            : {},
+        ),
+      execute: () => assert.fail("invalid site name cannot run commands"),
+      log() {},
+    }),
+    /корректное имя выбранного сайта/,
+  );
 });
 
 test("malformed saved state and denied authentication are not overwritten or deployed", async (t) => {
