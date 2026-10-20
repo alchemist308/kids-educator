@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="490" viewBox="0 0 760 490" fill="none">
+<defs><linearGradient id="sky" x1="350" y1="20" x2="350" y2="490" gradientUnits="userSpaceOnUse"><stop stop-color="#f0f0d9"/><stop offset="1" stop-color="#e4eadc"/></linearGradient><linearGradient id="hill" x1="420" y1="140" x2="420" y2="440" gradientUnits="userSpaceOnUse"><stop stop-color="#94b69b"/><stop offset="1" stop-color="#5a8a71"/></linearGradient><linearGradient id="stone" x1="355" y1="245" x2="355" y2="410"><stop stop-color="#d8d5b5"/><stop offset="1" stop-color="#829483"/></linearGradient></defs>
+<circle cx="428" cy="241" r="217" fill="url(#sky)"/><circle cx="582" cy="115" r="37" fill="#f5ce79"/><path d="M196 162h66m-33-14h64m242 51h90" stroke="#fffdf3" stroke-width="14" stroke-linecap="round"/>
+<path d="m128 326 104-113 45 47 96-120 121 125 44-51 114 117" fill="#c5d5ba"/><path d="m327 196 46-56 54 56-31-10-23 13-16-14Z" fill="#fbf7e6"/>
+<ellipse cx="414" cy="411" rx="264" ry="32" fill="#244f3d" opacity=".08"/>
+<path d="M178 326c60-92 160-84 224-47 96-93 223-65 247 46l-17 58c-155 58-343 43-452-4Z" fill="url(#hill)"/>
+<path d="m180 367 4 29 65 18 20 30 98 16 107-11 51-23 76-13 40-33-1-24-78 34-147 22-148-20Z" fill="url(#stone)"/>
+<path d="M257 389c-35-44 33-57 95-58s126-34 105-54" stroke="#e7d8ab" stroke-width="19"/><path d="M257 389c-35-44 33-57 95-58s126-34 105-54" stroke="#f5e7c0" stroke-width="11"/>
+<path d="M232 350v-89m0 17-21-16m21 37 21-20" stroke="#4a6650" stroke-width="7" stroke-linecap="round"/><path d="m232 210-40 66h80Z" fill="#456e50"/><path d="m232 237-49 64h98Z" fill="#477b55"/><path d="m232 269-58 64h116Z" fill="#507f59"/>
+<path d="M579 339v-93" stroke="#43614a" stroke-width="7"/><path d="m579 191-38 68h76Z" fill="#35644b"/><path d="m579 223-49 68h98Z" fill="#3c7152"/><path d="m579 255-56 66h112Z" fill="#467b57"/>
+<path d="M537 316v-67" stroke="#49644a" stroke-width="5"/><path d="m537 208-34 55h68Z" fill="#71976c"/><path d="m537 237-42 57h84Z" fill="#709b6e"/>
+<path d="M332 287v-98h117v98" fill="#f3dfac"/><path d="m318 190 72-58 72 58Z" fill="#be7653"/><path d="m327 184 63-51 63 51" stroke="#8b543d" stroke-width="6" stroke-linejoin="round"/>
+<path d="M376 288v-40a15 15 0 0 1 30 0v40" fill="#4e6e54"/><path d="M347 212h15v22h-15zm70 0h15v22h-15z" fill="#75977a"/><path d="M390 135V96" stroke="#745d44" stroke-width="4"/><path d="m392 97 42 8-42 18" fill="#efb953"/>
+<path d="M429 280v-67h34v67" fill="#e2c994"/><path d="m419 214 27-30 27 30Z" fill="#af6849"/><path d="M443 233h9v15h-9z" fill="#688669"/>
+<ellipse cx="305" cy="352" rx="20" ry="7" fill="#3e644b" opacity=".2"/><path d="m294 331 9-20 12 20-5 15h-12Z" fill="#ecc568"/><path d="m303 311 2 22 10-2" fill="#f9dea0"/>
+<path d="m491 353 12-26 16 26-8 20h-13Z" fill="#dfb458"/><path d="m503 327 3 29 13-3" fill="#f7d986"/>
+<path d="m207 376 13-2m337-10 13 3m-70 34 11-3m-184-15 11 3" stroke="#adc49a" stroke-width="4" stroke-linecap="round"/>
+<g transform="rotate(-13 159 226)"><rect x="109" y="183" width="85" height="63" rx="10" fill="#fffcf0" stroke="#dacda9" stroke-width="2"/><path d="m120 198 26-4 4 36-26 4Zm29-4 26-4 4 36-26 4Z" fill="#e1ead4"/><path d="m150 194 4 37m-25-25 12-2m16 8 14-2m-12 10 13-2" stroke="#74977a" stroke-width="2" stroke-linecap="round"/></g>
+<g transform="rotate(11 610 174)"><rect x="590" y="151" width="56" height="56" rx="15" fill="#fffcf0" stroke="#d8d8bd" stroke-width="2"/><path d="m608 169 18 18m0-18-18 18" stroke="#67896a" stroke-width="5" stroke-linecap="round"/></g>
+<path d="m277 131 3 10 10 3-10 3-3 10-3-10-10-3 10-3Z" fill="#dca954"/><path d="m573 394 2 7 7 2-7 2-2 7-2-7-7-2 7-2Z" fill="#dca954"/>
+<path d="m482 102 8-6 9 6m-23 17 6-5 7 5" stroke="#65846c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<g transform="translate(617 350) rotate(14)"><circle r="39" fill="#fffcf0" stroke="#d9cba5" stroke-width="3"/><circle r="29" stroke="#d9cba5"/><path d="m0-25 9 28-9-5-9 5Z" fill="#be7653"/><path d="m0 25 9-22-9-5-9 5Z" fill="#769579"/><circle r="4" fill="#f6e6bc"/></g>
+</svg>
