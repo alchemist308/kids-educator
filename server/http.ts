@@ -74,6 +74,9 @@ export function createDuelHandler(
     createDuelService(store, Date.now, provideQuestions),
   );
 }
-export function createQuestHandler(loadBank: () => Promise<QuestionBank>) {
-  return createJsonHandler(createQuestService(loadBank));
+export function createQuestHandler(
+  loadBank: () => Promise<QuestionBank>,
+  loadReading?: () => Promise<QuestionBank>,
+) {
+  return createJsonHandler(createQuestService(loadBank, loadReading));
 }

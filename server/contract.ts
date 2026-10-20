@@ -1,4 +1,4 @@
-import type { SubjectId } from "../src/data/questions.ts";
+import type { Question, SubjectId } from "../src/data/questions.ts";
 
 export type DuelSubject = SubjectId | "mixed";
 export interface DuelPlayer {
@@ -12,6 +12,7 @@ export interface PublicQuestion {
   subject: SubjectId;
   prompt: string;
   choices: string[];
+  passage?: Question["passage"];
 }
 export interface DuelFeedback {
   questionId: string;

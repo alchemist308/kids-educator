@@ -36,7 +36,15 @@ function isText(value: unknown, max: number): value is string {
 }
 
 /** Treat stored content as untrusted input. Invalid content is never replaced silently. */
-export function validateQuestionBank(value: unknown): QuestionBank {
+export interface BankOptions {
+  seed?: Question[];
+  requiredSubjects?: SubjectId[];
+  requirePassage?: boolean;
+}
+export function validateQuestionBank(
+  value: unknown,
+  options: BankOptions = {},
+): QuestionBank {
   if (!value || typeof value !== "object")
     throw new ContentBankError("В базе отсутствует корректный банк заданий.");
   const bank = value as Partial<QuestionBank>;
@@ -80,10 +88,28 @@ export function validateQuestionBank(value: unknown): QuestionBank {
         "В банке обнаружено повреждённое или повторяющееся задание.",
       );
     }
+    if (question.passage !== undefined || options.requirePassage) {
+      const passage = question.passage;
+      if (
+        !passage ||
+        typeof passage !== "object" ||
+        !isText(passage.title, 240) ||
+        !isText(passage.text, 12000) ||
+        !isText(passage.genre, 80) ||
+        !isText(passage.author, 200)
+      )
+        throw new ContentBankError(
+          "В банке обнаружен повреждённый текст для чтения.",
+        );
+    }
     ids.add(question.id);
     presentSubjects.add(question.subject);
   }
-  if (presentSubjects.size !== subjects.size)
+  if (
+    !(options.requiredSubjects ?? [...subjects]).every((subject) =>
+      presentSubjects.has(subject),
+    )
+  )
     throw new ContentBankError(
       "В банке заданий должны быть представлены все пять предметов.",
     );
@@ -98,6 +124,16 @@ export function validateQuestionBank(value: unknown): QuestionBank {
       answer: question.answer,
       explanation: question.explanation,
       difficulty: question.difficulty,
+      ...(question.passage
+        ? {
+            passage: {
+              title: question.passage.title,
+              text: question.passage.text,
+              genre: question.passage.genre,
+              author: question.passage.author,
+            },
+          }
+        : {}),
     })),
   };
 }
@@ -105,14 +141,18 @@ export function validateQuestionBank(value: unknown): QuestionBank {
 /** First-use initialization is conditional, so simultaneous cold starts cannot overwrite content. */
 export async function loadQuestionBank(
   storage: ContentStorage,
+  options: BankOptions = {},
 ): Promise<QuestionBank> {
   let existing = await storage.read();
   if (existing === null) {
-    const seed = validateQuestionBank({
-      version: BANK_VERSION,
-      updatedAt: new Date().toISOString(),
-      questions,
-    });
+    const seed = validateQuestionBank(
+      {
+        version: BANK_VERSION,
+        updatedAt: new Date().toISOString(),
+        questions: options.seed ?? questions,
+      },
+      options,
+    );
     const initialized = await storage.initialize(seed);
     if (initialized) return seed;
     existing = await storage.read();
@@ -121,7 +161,7 @@ export async function loadQuestionBank(
         "Не удалось загрузить банк заданий после инициализации.",
       );
   }
-  return validateQuestionBank(existing);
+  return validateQuestionBank(existing, options);
 }
 
 /** Cache is scoped to a warm function instance. Failed loads are retried on the next request. */
@@ -129,13 +169,14 @@ export function createQuestionBankLoader(
   storage: ContentStorage,
   now: () => number = Date.now,
   ttlMs = 60_000,
+  options: BankOptions = {},
 ) {
   let cached: QuestionBank | null = null;
   let expires = 0;
   let pending: Promise<QuestionBank> | null = null;
   return async (): Promise<QuestionBank> => {
     if (cached && now() < expires) return structuredClone(cached);
-    pending ??= loadQuestionBank(storage);
+    pending ??= loadQuestionBank(storage, options);
     try {
       cached = await pending;
       expires = now() + ttlMs;

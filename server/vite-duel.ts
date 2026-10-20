@@ -6,15 +6,17 @@ import {
   createQuestionBankLoader,
 } from "./content-store.ts";
 import { createQuestionProvider } from "./quest-service.ts";
+import { createReadingBankLoader } from "./reading-store.ts";
 
 /** Development only: restart clears rooms and the local content store. Production uses Netlify Blobs. */
 export function localDuelMiddleware() {
   const loadBank = createQuestionBankLoader(createMemoryContentStorage());
+  const loadReading = createReadingBankLoader(createMemoryContentStorage());
   const duel = createDuelHandler(
     createMemoryStore(),
-    createQuestionProvider(loadBank),
+    createQuestionProvider(loadBank, loadReading),
   );
-  const quest = createQuestHandler(loadBank);
+  const quest = createQuestHandler(loadBank, loadReading);
   return async (
     req: IncomingMessage,
     res: ServerResponse,

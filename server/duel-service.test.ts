@@ -281,3 +281,53 @@ test("duels initialize the content database and snapshot level-specific tasks fo
     /Уровень/,
   );
 });
+
+test("duel questions include the original reading passage but never expose answer metadata", async () => {
+  const { generateQuestions } = await import("../src/data/generator.ts");
+  const passage = {
+    title: "У ручья",
+    text: "Мальчики нашли у ручья маленький мост.",
+    genre: "Рассказ",
+    author: "Квестоград",
+  };
+  const duel = createDuelService(
+    createMemoryStore(),
+    Date.now,
+    async (subject, count, seed, level) => {
+      const result = generateQuestions(subject, count, seed, level);
+      result[0].passage = { ...passage };
+      // Even unexpected stored fields must not become public answer hints.
+      Object.assign(result[0].passage, {
+        answer: 0,
+        explanation: "private hint",
+      });
+      return result;
+    },
+  );
+  const host = await duel({
+    action: "create",
+    name: "Первый",
+    subject: "literature",
+  });
+  const guest = await duel({
+    action: "join",
+    name: "Второй",
+    code: host.room.code,
+  });
+  assert.deepEqual(guest.room.currentQuestion?.passage, passage);
+  assert.equal(Object.hasOwn(guest.room.currentQuestion!, "answer"), false);
+  assert.equal(
+    Object.hasOwn(guest.room.currentQuestion!.passage!, "answer"),
+    false,
+  );
+  assert.equal(
+    Object.hasOwn(guest.room.currentQuestion!.passage!, "explanation"),
+    false,
+  );
+  const current = await duel({
+    action: "status",
+    code: host.room.code,
+    token: host.token,
+  });
+  assert.deepEqual(current.room.currentQuestion, guest.room.currentQuestion);
+});

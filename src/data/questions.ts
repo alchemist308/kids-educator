@@ -8,6 +8,12 @@ export interface Question {
   answer: number;
   explanation: string;
   difficulty: 1 | 2 | 3;
+  passage?: {
+    title: string;
+    text: string;
+    genre: string;
+    author: string;
+  };
 }
 
 export const subjects: {

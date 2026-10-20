@@ -4,6 +4,7 @@ import {
   BookOpen,
   Check,
   ChevronDown,
+  CalendarDays,
   Compass,
   Flame,
   FlaskConical,
@@ -26,6 +27,14 @@ import { subjects, questions } from "./data/questions";
 import type { Question, SubjectId } from "./data/questions";
 import Quiz from "./components/Quiz";
 import Duel from "./components/Duel";
+import YearRoute from "./components/YearRoute";
+import {
+  completeYearQuest,
+  getAnnualAchievements,
+  getAnnualProgress,
+  loadYearStore,
+  YEAR_STORAGE_KEY,
+} from "./year-progress";
 import {
   awardAnswer,
   completeQuest,
@@ -35,7 +44,7 @@ import {
   todayKey,
 } from "./progress";
 
-type View = "home" | "duel" | "achievements";
+type View = "home" | "year" | "duel" | "achievements";
 const icons = {
   math: FlaskConical,
   world: Leaf,
@@ -62,6 +71,8 @@ export default function App() {
   const [progress, setProgress] = useState(loadProgress);
   const [view, setView] = useState<View>("home");
   const [quiz, setQuiz] = useState<SubjectId | "mixed" | null>(null);
+  const [quizWeek, setQuizWeek] = useState<number | undefined>();
+  const [yearStore, setYearStore] = useState(loadYearStore);
   const [profileOpen, setProfileOpen] = useState(false);
   const [editNames, setEditNames] = useState(
     progress.profiles.map((p) => p.name),
@@ -70,6 +81,8 @@ export default function App() {
   const [storageUnavailable, setStorageUnavailable] = useState(false);
   const profileDialog = useRef<HTMLElement>(null);
   const profile = progress.profiles[progress.active];
+  const yearState = yearStore.profiles[progress.active];
+  const annual = getAnnualProgress(yearState);
   const today = profile.day === todayKey() ? profile.today : 0;
   const levelInfo = getLevel(profile.xp);
   const level = levelInfo.level;
@@ -81,6 +94,13 @@ export default function App() {
       setStorageUnavailable(true);
     }
   }, [progress]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(YEAR_STORAGE_KEY, JSON.stringify(yearStore));
+    } catch {
+      setStorageUnavailable(true);
+    }
+  }, [yearStore]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setProfileOpen(false);
@@ -115,14 +135,25 @@ export default function App() {
   }, [profileOpen]);
   function navigate(next: View) {
     setQuiz(null);
+    setQuizWeek(undefined);
     setView(next);
     window.scrollTo({ top: 0, behavior: "instant" });
   }
   function launch(subject: SubjectId | "mixed") {
+    setQuizWeek(undefined);
     setQuiz(subject);
     window.scrollTo({ top: 0, behavior: "instant" });
   }
-  const earned = getAchievements(profile);
+  function launchYear(week: number, subject: SubjectId) {
+    setQuizWeek(week);
+    setQuiz(subject);
+    setView("year");
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+  const earned = [
+    ...getAchievements(profile),
+    ...getAnnualAchievements(yearState),
+  ];
   function updateAnswer(question: Question, correct: boolean) {
     const reward = awardAnswer(profile, question, correct);
     setProgress((p) => ({
@@ -144,6 +175,14 @@ export default function App() {
         i === p.active ? completeQuest(item, subject, correct, total) : item,
       ),
     }));
+    if (quizWeek && subject !== "mixed")
+      setYearStore((previous) => ({
+        profiles: previous.profiles.map((item, i) =>
+          i === progress.active
+            ? completeYearQuest(item, quizWeek, subject, correct, total)
+            : item,
+        ) as typeof previous.profiles,
+      }));
   }
   function saveNames() {
     if (editNames.some((n) => !n.trim())) {
@@ -181,20 +220,35 @@ export default function App() {
               className={view === "home" ? "active" : ""}
               onClick={() => navigate("home")}
             >
-              <Map size={17} /> Приключения
+              <Map size={17} />
+              <span className="nav-long">Приключения</span>
+              <span className="nav-short">Миры</span>
+            </button>
+            <button
+              className={view === "year" ? "active" : ""}
+              onClick={() => navigate("year")}
+              aria-label="Маршрут на год"
+            >
+              <CalendarDays size={17} />
+              <span className="nav-long">Маршрут на год</span>
+              <span className="nav-short">Мой год</span>
             </button>
             <button
               className={view === "duel" ? "active" : ""}
               onClick={() => navigate("duel")}
             >
-              <Swords size={17} /> Дуэль с другом
+              <Swords size={17} />
+              <span className="nav-long">Дуэль с другом</span>
+              <span className="nav-short">Дуэль</span>
               <span className="nav-dot" />
             </button>
             <button
               className={view === "achievements" ? "active" : ""}
               onClick={() => navigate("achievements")}
             >
-              <Medal size={17} /> Достижения
+              <Medal size={17} />
+              <span className="nav-long">Достижения</span>
+              <span className="nav-short">Значки</span>
             </button>
           </nav>
           <button
@@ -225,12 +279,20 @@ export default function App() {
       )}
       {quiz ? (
         <Quiz
-          key={quiz}
+          key={`${quiz}-${quizWeek ?? "free"}`}
           subject={quiz}
           level={level}
+          week={quizWeek}
           onClose={() => setQuiz(null)}
           onAnswer={updateAnswer}
           onFinish={finish}
+        />
+      ) : view === "year" ? (
+        <YearRoute
+          key={progress.active}
+          state={yearState}
+          name={profile.name}
+          onStart={launchYear}
         />
       ) : view === "duel" ? (
         <Duel
@@ -268,9 +330,9 @@ export default function App() {
               <span className="eyebrow">ТВОЙ УРОВЕНЬ</span>
               <h2>
                 {level} ·{" "}
-                {level < 4
+                {level < 10
                   ? "Начинающий исследователь"
-                  : level < 10
+                  : level < 25
                     ? "Опытный следопыт"
                     : "Мастер открытий"}
               </h2>
@@ -350,8 +412,14 @@ export default function App() {
                 делают тебя сильнее.
               </p>
               <div className="hero-actions">
-                <button className="button" onClick={() => launch("mixed")}>
+                <button className="button" onClick={() => navigate("year")}>
                   Начать приключение <ArrowRight size={18} />
+                </button>
+                <button
+                  className="text-button free-practice-link"
+                  onClick={() => launch("mixed")}
+                >
+                  Быстрая тренировка
                 </button>
                 <span className="hero-duration">
                   <Compass size={17} /> 8 заданий · 10–15 минут
@@ -375,6 +443,27 @@ export default function App() {
               </div>
               <span className="art-coordinate">55° С. Ш. · 37° В. Д.</span>
             </div>
+          </section>
+          <section className="annual-dashboard">
+            <div className="round-icon green">
+              <CalendarDays size={27} />
+            </div>
+            <div>
+              <span className="eyebrow">ГОДОВОЙ МАРШРУТ · 52 НЕДЕЛИ</span>
+              <h2>
+                {annual.yearFinished
+                  ? "Год открытий завершён!"
+                  : `Неделя ${annual.week}: маленькие шаги к большому`}
+              </h2>
+              <p>
+                {annual.completed} из 260 квестов · 5 занятий в неделю по 10–15
+                минут · 2 080 заданий с повторением
+              </p>
+            </div>
+            <button className="button" onClick={() => navigate("year")}>
+              Мой маршрут
+              <ArrowRight size={17} />
+            </button>
           </section>
           <section className="progress-strip" aria-label="Твой прогресс">
             <div className="progress-greeting">

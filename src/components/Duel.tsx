@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
+  BookOpen,
   Check,
   CheckCheck,
   Copy,
@@ -457,6 +458,22 @@ export default function Duel({
                 <span className="question-tag">
                   Сначала подумай, потом отвечай
                 </span>
+                {room.currentQuestion.passage && (
+                  <details className="reading-passage" open>
+                    <summary>
+                      <BookOpen size={17} />
+                      <strong>{room.currentQuestion.passage.title}</strong>
+                      <span>Текст для чтения</span>
+                    </summary>
+                    <p className="reading-author">
+                      {room.currentQuestion.passage.genre} ·{" "}
+                      {room.currentQuestion.passage.author}
+                    </p>
+                    <div className="reading-text">
+                      {room.currentQuestion.passage.text}
+                    </div>
+                  </details>
+                )}
                 <h2>{room.currentQuestion.prompt}</h2>
                 <div className="answer-grid">
                   {room.currentQuestion.choices.map((choice, i) => (

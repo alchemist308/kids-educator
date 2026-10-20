@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
+  BookOpen,
   Check,
   Flag,
   Lightbulb,
@@ -15,12 +16,14 @@ import type { Question, SubjectId } from "../data/questions";
 export default function Quiz({
   subject,
   level,
+  week,
   onClose,
   onAnswer,
   onFinish,
 }: {
   subject: SubjectId | "mixed";
   level: number;
+  week?: number;
   onClose: () => void;
   onAnswer: (
     question: Question,
@@ -55,7 +58,11 @@ export default function Quiz({
     void fetch("/.netlify/functions/quest", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subject, level: initialLevel }),
+      body: JSON.stringify({
+        subject,
+        level: initialLevel,
+        ...(week ? { week } : {}),
+      }),
       signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]),
     })
       .then(async (response) => {
@@ -84,7 +91,7 @@ export default function Quiz({
         }
       });
     return () => controller.abort();
-  }, [subject, initialLevel, requestId]);
+  }, [subject, initialLevel, requestId, week]);
   function answer(choice: number) {
     if (selected !== null) return;
     setSelected(choice);
@@ -120,7 +127,10 @@ export default function Quiz({
         <button className="text-button" onClick={() => setConfirmExit(true)}>
           <X size={18} /> Выйти из квеста
         </button>
-        <span className="eyebrow">{title}</span>
+        <span className="eyebrow">
+          {week ? `Неделя ${week} · ` : ""}
+          {title}
+        </span>
         <span className="xp-pill">
           <Star size={16} /> +{xp} XP
         </span>
@@ -174,10 +184,10 @@ export default function Quiz({
           <strong className="result-xp">+{xp} XP в копилку знаний</strong>
           <div className="result-buttons">
             <button className="button" onClick={restart}>
-              <RotateCcw size={17} /> Ещё квест
+              <RotateCcw size={17} /> {week ? "Повторить квест" : "Ещё квест"}
             </button>
             <button className="button secondary" onClick={onClose}>
-              К карте миров
+              {week ? "К маршруту на год" : "К карте миров"}
             </button>
           </div>
         </div>
@@ -204,11 +214,24 @@ export default function Quiz({
                 }{" "}
                 · до {[8, 12, 16][question.difficulty - 1]} XP
               </div>
+              {question.passage && (
+                <details className="reading-passage" open>
+                  <summary>
+                    <BookOpen size={17} />
+                    <strong>{question.passage.title}</strong>
+                    <span>Текст для чтения</span>
+                  </summary>
+                  <p className="reading-author">
+                    {question.passage.genre} · {question.passage.author}
+                  </p>
+                  <div className="reading-text">{question.passage.text}</div>
+                </details>
+              )}
               <h1>{question.prompt}</h1>
               <div className="answer-grid">
                 {question.choices.map((choice, i) => (
                   <button
-                    autoFocus={i === 0}
+                    autoFocus={i === 0 && !question.passage}
                     key={i}
                     disabled={selected !== null}
                     onClick={() => answer(i)}

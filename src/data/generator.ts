@@ -1,4 +1,5 @@
 import { questions, type Question, type SubjectId } from "./questions.ts";
+import { topicCatalog, type TopicId } from "./curriculum.ts";
 
 type Random = () => number;
 type Difficulty = Question["difficulty"];
@@ -1257,7 +1258,10 @@ export function generateQuestions(
           ...pool[cursors[id]++],
           choices: [...pool[cursors[id] - 1].choices],
         };
-        question.id = questionContentId(question);
+        // Authored reading IDs identify both a particular text and its question.
+        // Preserve them across free practice and the annual route: generic
+        // prompts can recur in different texts without being the same task.
+        if (!question.passage) question.id = questionContentId(question);
       }
       if (seen.has(question.id)) continue;
       seen.add(question.id);
@@ -1275,6 +1279,94 @@ export function generateQuestions(
       });
     }
     if (!possible) break;
+  }
+  return result;
+}
+
+/** Select one real reviewed family for a planned week, rather than relabelling a
+ * random subject round. Finite vocabulary/literary families may return fewer
+ * than requested; the year provider fills those slots with explicit review.
+ */
+export function generateTopicQuestions(
+  topic: TopicId,
+  count = 6,
+  seed = 1,
+  level = 1,
+  bank: Question[] = questions,
+): Question[] {
+  const definition = topicCatalog[topic];
+  if (!definition) throw new RangeError("Неизвестная тема годового маршрута.");
+  const requested = Number.isFinite(count)
+    ? Math.max(0, Math.min(500, Math.floor(count)))
+    : 6;
+  if (!requested) return [];
+  const random = rng(seed);
+  const families: Partial<Record<SubjectId, Template[]>> = {
+    math: mathTemplates,
+    world: worldTemplates,
+    russian: russianTemplates,
+    english: englishTemplates,
+  };
+  const templates = definition.templateIndices.map(
+    (index) => families[definition.subject]![index],
+  );
+  const patterns: Partial<Record<TopicId, RegExp>> = {
+    "literature-genres": /жанр|народную сказку|короткое поучительное/i,
+    "literature-characters": /качество|диалог/i,
+    "literature-theme": /тем[аоу]|главн[а-я]+ мысл|пословиц/i,
+    "literature-sequence": /оглавление|страницу с нужной главой/i,
+    "literature-poetry": /рифма|поэтическ/i,
+    "literature-authors": /^Кто /i,
+    "literature-figurative": /приём|сравнение|описание природы/i,
+  };
+  const reviewed =
+    definition.subject === "literature"
+      ? shuffle(
+          random,
+          bank.filter(
+            (question) =>
+              question.subject === "literature" &&
+              !question.passage &&
+              (!patterns[topic] || patterns[topic]!.test(question.prompt)),
+          ),
+        )
+      : [];
+  const result: Question[] = [];
+  const seen = new Set<string>();
+  let cursor = 0;
+  for (
+    let attempts = 0;
+    result.length < requested && attempts < requested * 100 + 100;
+    attempts++
+  ) {
+    let question: Question;
+    if (templates.length)
+      question = pick(random, templates)(
+        random,
+        difficultyForLevel(random, level),
+      );
+    else if (cursor < reviewed.length) {
+      const source = reviewed[cursor++];
+      question = {
+        ...source,
+        choices: [...source.choices],
+        id: questionContentId(source),
+      };
+    } else break;
+    if (seen.has(question.id)) continue;
+    seen.add(question.id);
+    const choices = shuffle(
+      random,
+      question.choices.map((label, index) => ({
+        label,
+        correct: index === question.answer,
+      })),
+    );
+    result.push({
+      ...question,
+      choices: choices.map((choice) => choice.label),
+      answer: choices.findIndex((choice) => choice.correct),
+    });
   }
   return result;
 }

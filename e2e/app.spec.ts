@@ -48,7 +48,7 @@ test("five subject worlds render on desktop and mobile without horizontal scroll
       )
       .toBe(true);
     await expect(
-      page.getByRole("button", { name: "Начать приключение" }),
+      page.getByRole("button", { name: "Быстрая тренировка" }),
     ).toBeVisible();
     if (width === 390)
       await page.screenshot({
@@ -94,7 +94,7 @@ test("a real database-backed solo quest awards weighted XP and unlocks achieveme
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
   const loaded = page.waitForResponse(questResponse);
-  await page.getByRole("button", { name: "Начать приключение" }).click();
+  await page.getByRole("button", { name: "Быстрая тренировка" }).click();
   const payload = (await (await loaded).json()) as {
     questions: Question[];
     source: string;
@@ -171,7 +171,7 @@ test("a failed quest request explains the problem and can retry the real service
     }),
   );
   await page.goto("/");
-  await page.getByRole("button", { name: "Начать приключение" }).click();
+  await page.getByRole("button", { name: "Быстрая тренировка" }).click();
   await expect(page.getByRole("alert")).toContainText(
     "Квест пока не загрузился",
   );

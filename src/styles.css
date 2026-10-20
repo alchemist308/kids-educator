@@ -2959,3 +2959,620 @@ select {
     max-width: 80px;
   }
 }
+
+/* A year of short, structured quests. */
+.nav-short {
+  display: none;
+}
+.hero-actions {
+  flex-wrap: wrap;
+}
+.free-practice-link {
+  font-size: 12px;
+}
+.annual-dashboard {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: #edf1e5;
+  border: 1px solid #dfe6d3;
+  border-radius: 13px;
+  padding: 23px 25px;
+  margin-bottom: 22px;
+}
+.annual-dashboard > div:nth-child(2) {
+  flex: 1;
+}
+.annual-dashboard h2 {
+  font-size: 20px;
+  letter-spacing: -0.5px;
+  margin: 5px 0 8px;
+}
+.annual-dashboard p {
+  font-size: 12px;
+  color: #748466;
+  line-height: 1.7;
+}
+.year-page {
+  padding-top: 42px;
+  padding-bottom: 60px;
+}
+.year-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+  margin: 10px 0 32px;
+}
+.year-intro h1 {
+  font-size: 46px;
+  letter-spacing: -1.7px;
+  line-height: 1.15;
+  margin: 13px 0 18px;
+}
+.year-intro p {
+  font-size: 14px;
+  color: #7c886e;
+  line-height: 1.9;
+}
+.year-emblem {
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: #eef0df;
+  border: 1px solid #dfe6cf;
+  color: #8c9c6e;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(6deg);
+}
+.year-emblem > span {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-top: 3px;
+}
+.year-emblem small {
+  font-size: 8px;
+  letter-spacing: 1.4px;
+  margin-top: 6px;
+}
+.year-summary {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 1fr;
+  gap: 25px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: #fffefa;
+  padding: 25px;
+  margin-bottom: 35px;
+}
+.year-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.year-summary > div + div {
+  border-left: 1px solid var(--border);
+  padding-left: 30px;
+}
+.year-summary strong {
+  font-size: 16px;
+}
+.year-summary > div:first-child strong {
+  font-size: 27px;
+}
+.year-summary small {
+  font-size: 12px;
+  font-weight: 400;
+  color: #8d987b;
+}
+.year-summary > div > span:last-child {
+  font-size: 11px;
+  color: #859374;
+  line-height: 1.7;
+}
+.year-summary svg {
+  color: #8c9f70;
+}
+.year-summary .progress-track {
+  margin: 4px 0 0;
+}
+.year-chapters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.year-chapters button {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  padding: 19px 16px;
+  background: #f3f3ea;
+}
+.year-chapters button.selected {
+  border-color: #91a57c;
+  background: #edf2e5;
+}
+.year-chapters button > span {
+  color: #89977a;
+  font-size: 9px;
+  letter-spacing: 0.3px;
+}
+.year-chapters strong {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.year-weeks {
+  display: grid;
+  grid-template-columns: repeat(13, minmax(0, 1fr));
+  gap: 9px;
+  margin-bottom: 25px;
+}
+.year-weeks button {
+  border: 1px solid #e0e4d6;
+  border-radius: 9px;
+  min-height: 46px;
+  background: #fffef8;
+  font-size: 13px;
+  font-weight: 750;
+  color: #8b9879;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.year-weeks button.selected {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green);
+}
+.year-weeks button.complete {
+  background: #e4eddc;
+  color: #6c8a56;
+}
+.year-weeks button.complete.selected {
+  background: var(--green);
+  color: #fff;
+}
+.year-weeks .checkpoint {
+  border-color: #d5bd81;
+}
+.year-weeks button > span {
+  position: absolute;
+  top: -6px;
+  right: -1px;
+  font-size: 13px;
+  color: #bd9d55;
+}
+.week-plan {
+  background: #fffefa;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 30px;
+}
+.week-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  padding-bottom: 27px;
+}
+.week-heading h2 {
+  font-size: 28px;
+  letter-spacing: -0.7px;
+  line-height: 1.35;
+  margin: 8px 0 10px;
+}
+.week-heading p {
+  font-size: 12px;
+  color: #869373;
+  line-height: 1.7;
+}
+.week-stamp {
+  width: 62px;
+  height: 62px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: #91a178;
+  background: #f0f2e5;
+  display: grid;
+  place-items: center;
+}
+.week-quest {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border-top: 1px solid var(--border);
+  padding: 23px 0;
+}
+.week-quest-day {
+  background: var(--world-bg);
+  color: var(--world-color);
+  width: 44px;
+  height: 47px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.week-quest-copy {
+  flex: 1;
+}
+.week-quest-copy > span {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--world-color);
+  font-weight: 800;
+}
+.week-quest h3 {
+  font-size: 18px;
+  margin: 6px 0 8px;
+}
+.week-quest p {
+  font-size: 12px;
+  color: #869474;
+  line-height: 1.8;
+}
+.week-quest small {
+  display: block;
+  color: #88a06e;
+  margin-top: 7px;
+  font-size: 10px;
+}
+.week-quest .button {
+  flex-shrink: 0;
+  min-width: 140px;
+}
+.week-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+}
+.year-pacing,
+.year-complete {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  margin-top: 24px;
+  padding: 22px;
+  border-radius: 12px;
+  background: #f0f1e5;
+  color: #7d8e69;
+}
+.year-pacing svg,
+.year-complete svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.year-pacing strong,
+.year-complete strong {
+  font-size: 14px;
+}
+.year-pacing p,
+.year-complete p {
+  font-size: 12px;
+  line-height: 1.9;
+  margin-top: 7px;
+}
+.year-complete {
+  margin: 0 0 25px;
+  background: #f4ecd6;
+  color: #a38c4c;
+}
+.reading-passage {
+  margin-top: 23px;
+  background: #f5f3e9;
+  border: 1px solid #e6e5d6;
+  border-radius: 12px;
+  padding: 20px 23px;
+}
+.reading-passage summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  list-style: none;
+  flex-wrap: wrap;
+  color: #73855e;
+}
+.reading-passage summary strong {
+  font-size: 17px;
+}
+.reading-passage summary > span {
+  margin-left: auto;
+  font-size: 10px;
+  color: #8d987e;
+}
+.reading-author {
+  font-size: 10px;
+  color: #919a80;
+  margin: 11px 0 15px;
+}
+.reading-text {
+  font-size: 16px;
+  line-height: 1.9;
+  white-space: pre-line;
+  color: #4e6142;
+}
+@media (max-width: 820px) {
+  .header-inner nav {
+    gap: 25px;
+  }
+  .header-inner nav button {
+    font-size: 11px;
+  }
+  .year-intro h1 {
+    font-size: 37px;
+  }
+  .year-emblem {
+    width: 150px;
+    height: 150px;
+  }
+  .year-chapters {
+    gap: 10px;
+  }
+  .year-chapters button {
+    padding: 17px 13px;
+  }
+  .year-chapters strong {
+    font-size: 12px;
+  }
+  .year-summary {
+    gap: 20px;
+    padding: 20px;
+  }
+  .year-summary > div + div {
+    padding-left: 20px;
+  }
+  .year-summary strong {
+    font-size: 14px;
+  }
+  .year-weeks {
+    gap: 5px;
+  }
+  .week-plan {
+    padding: 25px;
+  }
+  .week-quest {
+    gap: 14px;
+  }
+  .week-quest h3 {
+    font-size: 16px;
+  }
+  .week-quest .button {
+    font-size: 12px;
+    min-width: 125px;
+    padding: 11px 14px;
+  }
+  .annual-dashboard {
+    flex-wrap: wrap;
+  }
+  .annual-dashboard h2 {
+    font-size: 18px;
+  }
+}
+@media (max-width: 560px) {
+  .nav-long {
+    display: none;
+  }
+  .nav-short {
+    display: inline;
+  }
+  .header-inner nav {
+    gap: 23px;
+  }
+  .header-inner nav button {
+    font-size: 11px;
+    gap: 5px;
+  }
+  .header-inner nav .nav-dot {
+    display: none;
+  }
+  .hero-actions {
+    flex-wrap: wrap;
+  }
+  .hero-actions .free-practice-link {
+    font-size: 11px;
+  }
+  .hero-duration {
+    max-width: none;
+  }
+  .annual-dashboard {
+    padding: 20px;
+    gap: 13px;
+    margin-bottom: 20px;
+  }
+  .annual-dashboard > .round-icon {
+    width: 38px;
+    height: 38px;
+  }
+  .annual-dashboard > div:nth-child(2) {
+    flex-basis: calc(100% - 51px);
+  }
+  .annual-dashboard h2 {
+    font-size: 17px;
+    line-height: 1.45;
+  }
+  .annual-dashboard p {
+    font-size: 11px;
+  }
+  .annual-dashboard .button {
+    width: 100%;
+  }
+  .year-page {
+    padding-top: 25px;
+  }
+  .year-intro {
+    margin-bottom: 27px;
+    gap: 15px;
+  }
+  .year-intro h1 {
+    font-size: 31px;
+    letter-spacing: -1px;
+  }
+  .year-intro p {
+    font-size: 13px;
+  }
+  .year-emblem {
+    display: none;
+  }
+  .year-summary {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 22px;
+    margin-bottom: 25px;
+  }
+  .year-summary > div:first-child {
+    grid-column: 1/-1;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 20px;
+  }
+  .year-summary > div:nth-child(2) {
+    border-left: 0;
+    padding-left: 0;
+  }
+  .year-summary > div:nth-child(3) {
+    padding-left: 15px;
+  }
+  .year-summary > div > span:last-child {
+    font-size: 10px;
+  }
+  .year-summary strong {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .year-summary small {
+    font-size: 12px;
+  }
+  .year-chapters {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .year-chapters button {
+    min-height: 94px;
+    gap: 7px;
+    padding: 15px;
+  }
+  .year-chapters strong {
+    font-size: 13px;
+  }
+  .year-chapters button > span {
+    font-size: 9px;
+  }
+  .year-weeks {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 7px;
+  }
+  .year-weeks button {
+    min-height: 39px;
+    font-size: 12px;
+  }
+  .week-plan {
+    padding: 22px 19px;
+    border-radius: 13px;
+  }
+  .week-heading {
+    align-items: flex-start;
+    padding-bottom: 23px;
+  }
+  .week-heading h2 {
+    font-size: 24px;
+  }
+  .week-heading p {
+    font-size: 11px;
+  }
+  .week-stamp {
+    width: 38px;
+    height: 38px;
+  }
+  .week-stamp svg {
+    width: 24px;
+  }
+  .week-quest {
+    flex-wrap: wrap;
+    gap: 13px;
+    padding: 23px 0;
+    align-items: flex-start;
+  }
+  .week-quest-day {
+    width: 35px;
+    height: 38px;
+    font-size: 10px;
+    border-radius: 9px;
+    margin-top: 4px;
+  }
+  .week-quest-copy {
+    flex-basis: calc(100% - 48px);
+  }
+  .week-quest-copy > span {
+    font-size: 8px;
+  }
+  .week-quest h3 {
+    font-size: 17px;
+    line-height: 1.45;
+  }
+  .week-quest p {
+    font-size: 12px;
+  }
+  .week-quest .button {
+    width: calc(100% - 48px);
+    margin-left: 48px;
+  }
+  .week-navigation {
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .week-navigation .text-button {
+    font-size: 11px;
+  }
+  .week-navigation .text-button:nth-child(2) {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+  }
+  .year-pacing {
+    padding: 20px;
+    gap: 12px;
+  }
+  .year-pacing p {
+    font-size: 12px;
+  }
+  .reading-passage {
+    padding: 18px;
+  }
+  .reading-passage summary strong {
+    font-size: 17px;
+  }
+  .reading-passage summary > span {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+  .reading-text {
+    font-size: 16px;
+    line-height: 1.9;
+  }
+}
+@media (max-width: 360px) {
+  .header-inner nav {
+    gap: 16px;
+  }
+  .header-inner nav button {
+    font-size: 10px;
+  }
+  .year-chapters strong {
+    font-size: 12px;
+  }
+}

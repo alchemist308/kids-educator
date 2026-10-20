@@ -1,21 +1,27 @@
 import { getStore } from "@netlify/blobs";
+import { createConditionalBlobFetch } from "./blobs-fetch.ts";
+
 import { BANK_KEY, type ContentStorage } from "./content-store.ts";
 import { DuelError, type RoomEntry, type RoomStore } from "./duel-service.ts";
 
+const guardedFetch = createConditionalBlobFetch();
+
 /** Resolve credentials lazily within the active Netlify request context. */
-export function createNetlifyContentStorage(): ContentStorage {
+export function createNetlifyContentStorage(key = BANK_KEY): ContentStorage {
   return {
     async read() {
       return getStore({
         name: "questograd-content",
         consistency: "strong",
-      }).get(BANK_KEY, { type: "json", consistency: "strong" });
+        fetch: guardedFetch,
+      }).get(key, { type: "json", consistency: "strong" });
     },
     async initialize(bank) {
       const result = await getStore({
         name: "questograd-content",
         consistency: "strong",
-      }).setJSON(BANK_KEY, bank, { onlyIfNew: true });
+        fetch: guardedFetch,
+      }).setJSON(key, bank, { onlyIfNew: true });
       return result.modified;
     },
   };
@@ -38,7 +44,11 @@ interface RoomBlobs {
 
 export function createNetlifyRoomStore({
   storeFactory = () =>
-    getStore({ name: "kvestograd-duels", consistency: "strong" }),
+    getStore({
+      name: "kvestograd-duels",
+      consistency: "strong",
+      fetch: guardedFetch,
+    }),
   localDevelopment = process.env.NETLIFY_DEV === "true",
 }: {
   storeFactory?: () => RoomBlobs;

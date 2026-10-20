@@ -40,10 +40,16 @@ test("actual SDK local storage pairs missing GET ETags with stable LIST versions
   });
   assert.equal(guest.room.state, "playing");
   assert.equal(guest.room.players.length, 2);
-  assert.equal(await store.write(host.room.code, first.data, first.etag), false);
+  assert.equal(
+    await store.write(host.room.code, first.data, first.etag),
+    false,
+  );
   const current = await store.get(host.room.code);
   assert.ok(current?.etag);
-  assert.equal(await store.write(host.room.code, current.data, current.etag), true);
+  assert.equal(
+    await store.write(host.room.code, current.data, current.etag),
+    true,
+  );
 
   const strictStore = createNetlifyRoomStore({
     storeFactory: () => blobs,

@@ -354,7 +354,8 @@ export function getAchievements(profile: Profile): Achievement[] {
     },
   ];
   for (const subject of SUBJECT_IDS) {
-    // Literature currently has 20 curated tasks; its milestones must be reachable.
+    // Retain introductory literature badges already earned in the first release.
+    // The yearly route adds five longer milestones alongside these early wins.
     const milestones = subject === "literature" ? [5, 10, 20] : [10, 30, 75];
     for (const [index, target] of milestones.entries()) {
       definitions.push({

@@ -123,6 +123,16 @@ function view(room: StoredRoom, player: StoredPlayer): DuelRoom {
           subject: next.subject,
           prompt: next.prompt,
           choices: next.choices,
+          ...(next.passage
+            ? {
+                passage: {
+                  title: next.passage.title,
+                  text: next.passage.text,
+                  genre: next.passage.genre,
+                  author: next.passage.author,
+                },
+              }
+            : {}),
         }
       : null,
     feedback:
